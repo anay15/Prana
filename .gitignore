@@ -25,3 +25,4 @@ frontend/public/mediapipe/
 .idea/
 .vscode/
 .claude/
+*.tsbuildinfo
