@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes -r requirements.txt && pip install --no-deps -r requirements-dev.txt
+      - run: ruff check . && ruff format --check .
+      - run: pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run fetch-models && npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t prana:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name prana -p 8000:8000 -e APP_ENV=development prana:ci
+          for i in $(seq 1 20); do curl -fsS localhost:8000/api/health && break; sleep 1; done
+          curl -fsS localhost:8000/api/poses | grep -q tadasana
+          curl -fsS localhost:8000/ | grep -q '<div id="root">'

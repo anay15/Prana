@@ -1,0 +1,24 @@
+# Render Blueprint: one-click deploy of the full stack.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: prana
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prana-db
+          property: connectionString
+
+databases:
+  - name: prana-db
+    plan: free
+    databaseName: prana
+    user: prana
+    ipAllowList: [] # private network only

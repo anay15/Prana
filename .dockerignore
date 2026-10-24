@@ -1,0 +1,11 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.db
+frontend/dist
+frontend/public/models
+frontend/public/mediapipe
+.git
+.github
+docs
+*.md
