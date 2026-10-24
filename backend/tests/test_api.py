@@ -116,5 +116,10 @@ def test_client_ip_ignores_spoofed_forwarded_for():
         # Attacker sends "6.6.6.6"; the proxy appends the real address last.
         assert security.client_ip(req("6.6.6.6, 203.0.113.7")) == "203.0.113.7"
         assert security.client_ip(req(None)) == "10.0.0.9"
+
+        # Render: client, Cloudflare edge, internal load balancer.
+        object.__setattr__(security.settings, "trusted_proxy_hops", 3)
+        chain = "6.6.6.6, 203.0.113.7, 172.71.0.1, 10.24.0.1"
+        assert security.client_ip(req(chain)) == "203.0.113.7"
     finally:
         object.__setattr__(security.settings, "trusted_proxy_hops", 0)

@@ -355,7 +355,7 @@ flowchart LR
 | `APP_ENV` | `development` | `production` enables `Secure` cookies and HSTS |
 | `ALLOWED_ORIGINS` | `RENDER_EXTERNAL_URL` | Extra comma-separated origins, e.g. a custom domain |
 | `RATE_LIMIT_STORAGE_URI` | `memory://` | e.g. `redis://…` for multi-instance rate limiting |
-| `TRUSTED_PROXY_HOPS` | `0` (`1` on Render) | Proxies that append to `X-Forwarded-For`; only those entries are trusted for client IPs |
+| `TRUSTED_PROXY_HOPS` | `0` (`3` on Render) | Proxies that append to `X-Forwarded-For`; only those entries are trusted for client IPs |
 
 > **Free-tier notes.** Render's free web services sleep after 15 minutes of inactivity, so the first request after that takes around a minute. Free Postgres databases expire after 30 days. For a long-lived demo, upgrade the database, or point `DATABASE_URL` at any Postgres provider (e.g. Neon or Supabase). The practice experience itself never depends on the backend being awake once the page has loaded.
 
