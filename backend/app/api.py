@@ -28,6 +28,23 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+@router.get("/debug/client-ip", include_in_schema=False)
+def debug_client_ip(request: Request) -> dict:
+    # TEMPORARY: shows the caller only its own forwarding headers so we can
+    # see how Render's proxies populate them. Remove once rate limiting is fixed.
+    from .security import client_ip
+
+    h = request.headers
+    return {
+        "client": request.client.host if request.client else None,
+        "x_forwarded_for": h.get("x-forwarded-for"),
+        "x_real_ip": h.get("x-real-ip"),
+        "cf_connecting_ip": h.get("cf-connecting-ip"),
+        "true_client_ip": h.get("true-client-ip"),
+        "rate_limit_key": client_ip(request),
+    }
+
+
 @router.get("/poses")
 @limiter.limit("120/minute")
 def list_poses(request: Request, response: Response) -> list[dict]:
