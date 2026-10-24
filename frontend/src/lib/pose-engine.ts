@@ -23,7 +23,7 @@ export interface LoadedEngine {
 let filesetPromise: ReturnType<typeof FilesetResolver.forVisionTasks> | null = null;
 
 /** Load BlazePose GHUM (MediaPipe Pose Landmarker), preferring the GPU
- * (WebGL/WebGPU) delegate and falling back to CPU (WASM SIMD). */
+ * (WebGL2) delegate and falling back to CPU (WASM SIMD). */
 export async function loadPoseEngine(variant: ModelVariant): Promise<LoadedEngine> {
   filesetPromise ??= FilesetResolver.forVisionTasks("/mediapipe/wasm");
   const fileset = await filesetPromise;
