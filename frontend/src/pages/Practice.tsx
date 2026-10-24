@@ -318,7 +318,7 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
 
       <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         {/* Stage */}
-        <div className="card relative aspect-[3/4] overflow-hidden bg-ink sm:aspect-video">
+        <div className="card relative aspect-[3/4] overflow-hidden bg-ink sm:aspect-video lg:aspect-[4/3]">
           <video ref={videoRef} playsInline muted className={`absolute inset-0 h-full w-full -scale-x-100 object-cover ${showCamera ? "" : "hidden"}`} />
           <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full -scale-x-100 object-cover ${showCamera ? "" : "hidden"}`} />
 
@@ -346,9 +346,9 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
           )}
 
           {(phase === "intro" || phase === "error") && (
-            <div className="absolute inset-0 grid place-items-center bg-surface p-6">
+            <div className="absolute inset-0 grid place-items-center overflow-y-auto bg-surface p-6">
               <div className="flex max-w-sm flex-col items-center text-center">
-                <PoseFigure pose={pose} className="h-36 w-36 text-brand sm:h-44 sm:w-44" />
+                <PoseFigure pose={pose} className="h-32 w-32 text-brand lg:h-36 lg:w-36" />
                 {phase === "error" ? (
                   <p className="mt-4 text-sm text-bad" role="alert">{errorMsg}</p>
                 ) : (
