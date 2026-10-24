@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+frontend/dist/
+
+# ML model binaries (downloaded at build time, checksum-verified)
+frontend/public/models/*.task
+frontend/public/mediapipe/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
