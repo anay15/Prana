@@ -11,6 +11,8 @@ services:
     envVars:
       - key: APP_ENV
         value: production
+      - key: TRUSTED_PROXY_HOPS # Render's load balancer appends the client IP
+        value: "1"
       - key: DATABASE_URL
         fromDatabase:
           name: prana-db

@@ -97,3 +97,24 @@ def test_rate_limit(client, session_body):
     codes = [client.post("/api/sessions", json=session_body, headers=ORIGIN).status_code for _ in range(32)]
     assert codes.count(201) == 30
     assert codes[-1] == 429
+
+
+def test_client_ip_ignores_spoofed_forwarded_for():
+    from starlette.requests import Request
+
+    from app import security
+
+    def req(xff: str | None) -> Request:
+        headers = [(b"x-forwarded-for", xff.encode())] if xff else []
+        return Request({"type": "http", "headers": headers, "client": ("10.0.0.9", 1234)})
+
+    # No trusted proxies: forwarded headers are ignored entirely.
+    assert security.client_ip(req("1.2.3.4")) == "10.0.0.9"
+
+    object.__setattr__(security.settings, "trusted_proxy_hops", 1)
+    try:
+        # Attacker sends "6.6.6.6"; the proxy appends the real address last.
+        assert security.client_ip(req("6.6.6.6, 203.0.113.7")) == "203.0.113.7"
+        assert security.client_ip(req(None)) == "10.0.0.9"
+    finally:
+        object.__setattr__(security.settings, "trusted_proxy_hops", 0)

@@ -6,7 +6,6 @@ from urllib.parse import urlsplit
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -27,13 +26,28 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+def client_ip(request: Request) -> str:
+    """The caller's IP for rate limiting.
+
+    Clients can put anything in X-Forwarded-For, so only the entries appended
+    by our own proxies are trusted: with N trusted hops, the client is the
+    N-th address from the right."""
+    hops = settings.trusted_proxy_hops
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if hops > 0 and forwarded:
+        chain = [part.strip() for part in forwarded.split(",") if part.strip()]
+        if len(chain) >= hops:
+            return chain[-hops][:64]
+    return request.client.host if request.client else "unknown"
+
+
 def _identity_key(request: Request) -> str:
     token = request.cookies.get(COOKIE_NAME)
-    return f"id:{hash_token(token)}" if token else f"ip:{get_remote_address(request)}"
+    return f"id:{hash_token(token)}" if token else f"ip:{client_ip(request)}"
 
 
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=client_ip,
     storage_uri=settings.rate_limit_storage,
     default_limits=["300/minute"],
     headers_enabled=True,

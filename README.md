@@ -251,7 +251,7 @@ erDiagram
 - **Anonymous identity.** The first save issues a 256-bit random token in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie scoped to `/api`. The server stores only its SHA-256 hash, and every query is scoped to the caller's user id.
 - **CSRF.** State-changing requests must carry an allow-listed `Origin` and a JSON content type (which forces a CORS preflight cross-site).
 - **Strict input validation.** Pydantic schemas with `extra="forbid"`, numeric ranges, a known-pose allow-list and cross-field checks. Validation errors never echo submitted values.
-- **Rate limiting.** Per-IP *and* per-identity limits (SlowAPI). Point `RATE_LIMIT_STORAGE_URI` at Redis when running more than one instance.
+- **Rate limiting.** Per-IP *and* per-identity limits (SlowAPI). Client IPs are taken only from proxy-appended `X-Forwarded-For` entries, so a spoofed header can't dodge the limit. Point `RATE_LIMIT_STORAGE_URI` at Redis when running more than one instance.
 - **Security headers.** A strict CSP (`script-src 'self' 'wasm-unsafe-eval'`, `connect-src 'self'`, `frame-ancestors 'none'`), HSTS, `nosniff`, `X-Frame-Options: DENY`, and a `Permissions-Policy` that allows the camera for this origin only.
 - **Supply chain.** Model files are downloaded from a pinned version and **SHA-256 verified** at build. Python dependencies are installed with `--require-hashes`.
 - **Least privilege.** The container runs as a non-root user, and the database accepts private-network connections only.
@@ -355,6 +355,7 @@ flowchart LR
 | `APP_ENV` | `development` | `production` enables `Secure` cookies and HSTS |
 | `ALLOWED_ORIGINS` | `RENDER_EXTERNAL_URL` | Extra comma-separated origins, e.g. a custom domain |
 | `RATE_LIMIT_STORAGE_URI` | `memory://` | e.g. `redis://…` for multi-instance rate limiting |
+| `TRUSTED_PROXY_HOPS` | `0` (`1` on Render) | Proxies that append to `X-Forwarded-For`; only those entries are trusted for client IPs |
 
 > **Free-tier notes.** Render's free web services sleep after 15 minutes of inactivity, so the first request after that takes around a minute. Free Postgres databases expire after 30 days. For a long-lived demo, upgrade the database, or point `DATABASE_URL` at any Postgres provider (e.g. Neon or Supabase). The practice experience itself never depends on the backend being awake once the page has loaded.
 

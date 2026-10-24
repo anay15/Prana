@@ -29,6 +29,8 @@ class Settings:
     env: str = field(default_factory=lambda: os.environ.get("APP_ENV", "development"))
     database_url: str = field(default_factory=_database_url)
     allowed_origins: list[str] = field(default_factory=_origins)
+    # Number of reverse proxies in front of the app that append to X-Forwarded-For
+    trusted_proxy_hops: int = field(default_factory=lambda: int(os.environ.get("TRUSTED_PROXY_HOPS", "0")))
     rate_limit_storage: str = field(default_factory=lambda: os.environ.get("RATE_LIMIT_STORAGE_URI", "memory://"))
     static_dir: Path = field(
         default_factory=lambda: Path(
