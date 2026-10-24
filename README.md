@@ -14,6 +14,10 @@ Prana watches your form through your camera, measures every joint in 3D, scores 
 ![React 19](https://img.shields.io/badge/react-19-149ECA?logo=react&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/ML-MediaPipe%20Pose%20Landmarker-0097A7)
 
+### [▶ Try it live: prana-yjwl.onrender.com](https://prana-yjwl.onrender.com)
+
+<sub>Hosted on Render's free tier: the first visit after a quiet spell can take ~50 s to wake up.</sub>
+
 [**Deploy your own**](#-deployment) · [Architecture](#-architecture) · [How the AI works](#-how-the-ai-works) · [Run locally](#-run-locally)
 
 <img src="docs/screenshots/home.png" alt="Prana home page" width="900" />
