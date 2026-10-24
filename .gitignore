@@ -24,3 +24,4 @@ frontend/public/mediapipe/
 .DS_Store
 .idea/
 .vscode/
+.claude/

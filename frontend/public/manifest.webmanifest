@@ -1,0 +1,9 @@
+{
+  "name": "Prana · AI Yoga Coach",
+  "short_name": "Prana",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F3EC",
+  "theme_color": "#2F6B5A",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
