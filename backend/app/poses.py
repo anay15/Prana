@@ -12,6 +12,9 @@ Joint definitions (landmark triplets, vertex in the middle):
 `mirror: true` means the pose may be performed on either side; the client
 scores both orientations and keeps the better one.
 
+`space` is the room the pose needs on camera, in body heights (w x h), used
+to adapt to small rooms.
+
 `figure` is a 2D stick figure in a 100x100 box (y grows downwards) used to
 draw the pose illustration. Front-view figures are drawn as the camera sees
 the person, so the person's left side appears on the right.
@@ -42,6 +45,7 @@ def _both(kind: str, angle: float, tolerance: float, weight: float = 1.0) -> lis
 POSES: Final[list[dict]] = [
     {
         "id": "tadasana",
+        "space": {"w": 0.35, "h": 1.05},
         "name": "Mountain Pose",
         "sanskrit": "Tadasana",
         "level": "beginner",
@@ -79,6 +83,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "vrksasana",
+        "space": {"w": 0.55, "h": 1.3},
         "name": "Tree Pose",
         "sanskrit": "Vrksasana",
         "level": "intermediate",
@@ -119,6 +124,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "utkatasana",
+        "space": {"w": 0.6, "h": 1.05},
         "name": "Chair Pose",
         "sanskrit": "Utkatasana",
         "level": "beginner",
@@ -156,6 +162,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "virabhadrasana_ii",
+        "space": {"w": 1.45, "h": 0.9},
         "name": "Warrior II",
         "sanskrit": "Virabhadrasana II",
         "level": "intermediate",
@@ -196,6 +203,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "trikonasana",
+        "space": {"w": 1.2, "h": 1.0},
         "name": "Triangle Pose",
         "sanskrit": "Trikonasana",
         "level": "intermediate",
@@ -234,6 +242,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "adho_mukha_svanasana",
+        "space": {"w": 1.15, "h": 0.7},
         "name": "Downward Dog",
         "sanskrit": "Adho Mukha Svanasana",
         "level": "beginner",
@@ -272,6 +281,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "phalakasana",
+        "space": {"w": 1.25, "h": 0.45},
         "name": "Plank Pose",
         "sanskrit": "Phalakasana",
         "level": "beginner",
@@ -309,6 +319,7 @@ POSES: Final[list[dict]] = [
     },
     {
         "id": "balasana",
+        "space": {"w": 1.0, "h": 0.4},
         "name": "Child's Pose",
         "sanskrit": "Balasana",
         "level": "beginner",

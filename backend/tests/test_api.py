@@ -13,6 +13,7 @@ def test_poses_are_well_formed(client):
     assert len(poses) == len(POSES) >= 8
     for pose in poses:
         assert pose["targets"], pose["id"]
+        assert 0.2 < pose["space"]["w"] < 2 and 0.2 < pose["space"]["h"] < 2, pose["id"]
         for t in pose["targets"]:
             assert t["joint"] in JOINTS
             assert 0 <= t["angle"] <= 180
