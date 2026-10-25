@@ -5,6 +5,7 @@ import { AuthProvider } from "./lib/auth";
 import { Home } from "./pages/Home";
 import { Library } from "./pages/Library";
 import { NotFound } from "./pages/NotFound";
+import { PoseProgress } from "./pages/PoseProgress";
 import { Profile } from "./pages/Profile";
 import { Progress } from "./pages/Progress";
 import { SignIn } from "./pages/SignIn";
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
           { path: "/poses", element: <Library /> },
           { path: "/practice/:poseId", element: <Suspense fallback={null}><Practice /></Suspense> },
           { path: "/progress", element: <Progress /> },
+          { path: "/progress/:poseId", element: <PoseProgress /> },
           { path: "/signin", element: <SignIn /> },
           { path: "/profile", element: <Profile /> },
           { path: "*", element: <NotFound /> },

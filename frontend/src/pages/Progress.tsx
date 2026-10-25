@@ -1,14 +1,18 @@
-import { Flame, Timer, Trash2, Trophy, Waves } from "lucide-react";
+import { ChevronRight, Flame, Timer, Trash2, Trophy, Waves } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { GoalRing } from "../components/GoalRing";
 import { PoseFigure } from "../components/PoseFigure";
+import { Recommendations } from "../components/Recommendations";
 import { scoreColor } from "../components/ScoreRing";
 import { usePoses } from "../hooks/usePoses";
 import { api } from "../lib/api";
+import { displayName, useAuth } from "../lib/auth";
 import type { SessionRecord, Stats } from "../lib/types";
 
 export function Progress() {
   const { poses } = usePoses();
+  const { me } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [sessions, setSessions] = useState<SessionRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +22,8 @@ export function Progress() {
       .then(([s, r]) => { setStats(s); setSessions(r); })
       .catch((e: Error) => setError(e.message));
 
-  useEffect(() => { void load(); }, []);
+  // Reload when the signed-in identity changes (sign in/out, guest merge)
+  useEffect(() => { void load(); }, [me?.authenticated, me?.email]);
 
   async function forget() {
     if (!window.confirm("Delete all of your saved sessions? This can't be undone.")) return;
@@ -35,12 +40,53 @@ export function Progress() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:py-14">
-      <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Your progress</h1>
-      <p className="mt-2 text-muted">Saved anonymously on this browser. No account needed.</p>
+      <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+        {me?.authenticated ? `Welcome back, ${displayName(me)}` : "Your progress"}
+      </h1>
+      <p className="mt-2 text-muted">
+        {me?.authenticated ? "Synced to your account on every device." : "Saved on this browser only."}
+      </p>
+
+      {me && !me.authenticated && (
+        <div className="card mt-6 flex flex-col gap-4 border-brand/30 bg-brand-soft/60 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">Keep your progress safe</p>
+            <p className="text-sm text-muted">Create a free account to sync across devices and get personal recommendations. Everything you've done so far comes with you.</p>
+          </div>
+          <Link to="/signin?mode=signup&next=/progress" className="btn btn-primary shrink-0">Create account</Link>
+        </div>
+      )}
 
       {error && <p className="card mt-6 p-5 text-bad" role="alert">{error}</p>}
 
-      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-8 grid gap-5 md:grid-cols-[1fr_1.4fr]">
+        {stats && (
+          <section className="card flex items-center gap-5 p-5 sm:p-6">
+            <div className="relative grid place-items-center">
+              <GoalRing goal={stats.weekly_goal} />
+              <div className="absolute text-center">
+                <div className="font-display text-2xl font-semibold tabular-nums">{stats.weekly_goal.days_done}/{stats.weekly_goal.goal_days}</div>
+              </div>
+            </div>
+            <div>
+              <h2 className="font-semibold">Weekly goal</h2>
+              <p className="mt-1 text-sm text-muted">
+                {stats.weekly_goal.days_done >= stats.weekly_goal.goal_days
+                  ? "Goal reached this week. Beautiful consistency!"
+                  : `${stats.weekly_goal.goal_days - stats.weekly_goal.days_done} more ${stats.weekly_goal.goal_days - stats.weekly_goal.days_done === 1 ? "day" : "days"} to hit your goal this week.`}
+              </p>
+              {me?.authenticated ? (
+                <Link to="/profile" className="mt-2 inline-block text-xs font-semibold text-brand hover:underline">Change goal</Link>
+              ) : (
+                <Link to="/signin?mode=signup&next=/profile" className="mt-2 inline-block text-xs font-semibold text-brand hover:underline">Set your own goal</Link>
+              )}
+            </div>
+          </section>
+        )}
+        <Recommendations compact />
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile icon={Waves} label="Sessions" value={stats?.total_sessions} />
         <Tile icon={Timer} label="Minutes practised" value={stats?.total_minutes} />
         <Tile icon={Trophy} label="Minutes held in form" value={stats?.total_hold_minutes} />
@@ -80,17 +126,20 @@ export function Progress() {
             {stats?.per_pose.map((p) => {
               const pose = poseById.get(p.pose_id);
               return (
-                <li key={p.pose_id} className="flex items-center gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-surface-2 p-1 text-brand">{pose && <PoseFigure pose={pose} className="h-full w-full" strokeWidth={6} />}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="truncate font-medium">{pose?.name ?? p.pose_id}</span>
-                      <span className="tabular-nums text-muted">{Math.round(p.best_score)}</span>
+                <li key={p.pose_id}>
+                  <Link to={`/progress/${p.pose_id}`} className="-mx-2 flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-surface-2">
+                    <div className="h-10 w-10 shrink-0 rounded-xl bg-surface-2 p-1 text-brand">{pose && <PoseFigure pose={pose} className="h-full w-full" strokeWidth={6} />}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="truncate font-medium">{pose?.name ?? p.pose_id}</span>
+                        <span className="tabular-nums text-muted">{Math.round(p.best_score)}</span>
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                        <div className="h-full rounded-full" style={{ width: `${p.best_score}%`, background: scoreColor(p.best_score) }} />
+                      </div>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                      <div className="h-full rounded-full" style={{ width: `${p.best_score}%`, background: scoreColor(p.best_score) }} />
-                    </div>
-                  </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                  </Link>
                 </li>
               );
             })}

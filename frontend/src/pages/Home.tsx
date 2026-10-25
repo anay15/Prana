@@ -2,7 +2,9 @@ import { ArrowRight, AudioLines, LineChart, ScanLine, ShieldCheck } from "lucide
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PoseFigure } from "../components/PoseFigure";
+import { Recommendations } from "../components/Recommendations";
 import { usePoses } from "../hooks/usePoses";
+import { displayName, useAuth } from "../lib/auth";
 
 const FEATURES = [
   { icon: ScanLine, title: "3D pose tracking", body: "BlazePose GHUM tracks 33 body landmarks in 3D at up to 30+ fps, right in your browser." },
@@ -19,6 +21,7 @@ const STEPS = [
 
 export function Home() {
   const { poses } = usePoses();
+  const { me } = useAuth();
   const [i, setI] = useState(0);
 
   useEffect(() => {
@@ -90,6 +93,12 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      {me?.authenticated && (
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
+          <Recommendations title={`Up next for you, ${displayName(me)}`} />
+        </div>
+      )}
 
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-20">
