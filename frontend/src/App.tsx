@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { AuthProvider } from "./lib/auth";
+import { ErrorPage } from "./pages/ErrorPage";
 import { Home } from "./pages/Home";
 import { Library } from "./pages/Library";
 import { NotFound } from "./pages/NotFound";
@@ -25,6 +26,7 @@ function Root() {
 const router = createBrowserRouter([
   {
     element: <Root />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <Layout />,
