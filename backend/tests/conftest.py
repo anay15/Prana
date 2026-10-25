@@ -1,6 +1,6 @@
 import os
 
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")  # CI/local may point this at Postgres
 os.environ["ALLOWED_ORIGINS"] = "http://testserver"
 os.environ["STATIC_DIR"] = "/nonexistent"
 os.environ["GOOGLE_CLIENT_ID"] = "test-client.apps.googleusercontent.com"

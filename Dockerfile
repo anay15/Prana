@@ -25,6 +25,8 @@ COPY backend/requirements.txt ./
 RUN pip install --require-hashes -r requirements.txt
 
 COPY backend/app ./app
+COPY backend/alembic.ini ./
+COPY backend/migrations ./migrations
 COPY --from=web /web/dist ./static
 
 # Non-root runtime user; only the SQLite fallback directory is writable.

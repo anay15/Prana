@@ -14,6 +14,16 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: prana
+          POSTGRES_PASSWORD: ci-only-not-secret
+          POSTGRES_DB: prana_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U prana" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -21,7 +31,12 @@ jobs:
           python-version: "3.12"
       - run: pip install --require-hashes -r requirements.txt && pip install --no-deps -r requirements-dev.txt
       - run: ruff check . && ruff format --check .
-      - run: pytest
+      - name: Tests (SQLite)
+        run: pytest
+      - name: Tests (Postgres, as in production)
+        run: pytest
+        env:
+          DATABASE_URL: postgresql://prana:ci-only-not-secret@localhost:5432/prana_test
 
   frontend:
     runs-on: ubuntu-latest
