@@ -10,8 +10,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import models  # noqa: F401  (register tables)
 from .api import router
+from .auth_api import router as auth_router
 from .config import settings
-from .db import Base, engine
+from .migrate import upgrade as migrate_database
 from .security import SecurityHeadersMiddleware, limiter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -20,7 +21,7 @@ log = logging.getLogger("prana")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    Base.metadata.create_all(engine)
+    migrate_database()
     log.info("Prana API started (env=%s)", settings.env)
     yield
 
@@ -37,6 +38,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_middleware(SecurityHeadersMiddleware)
 app.include_router(router)
+app.include_router(auth_router)
 
 
 @app.exception_handler(RateLimitExceeded)

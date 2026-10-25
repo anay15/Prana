@@ -5,18 +5,12 @@ from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from .auth import GUEST_COOKIE, current_or_new_user, current_user
 from .db import get_db
 from .models import PracticeSession, User
 from .poses import POSES
 from .schemas import DailyMinutes, PoseBest, SessionIn, SessionOut, Stats
-from .security import (
-    COOKIE_NAME,
-    current_or_new_user,
-    current_user,
-    identity_limit,
-    limiter,
-    require_same_origin,
-)
+from .security import identity_limit, limiter, require_same_origin
 
 router = APIRouter(prefix="/api", dependencies=[Depends(require_same_origin)])
 
@@ -86,12 +80,14 @@ def delete_my_data(
     user: User | None = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> None:
-    """Forget everything about the caller: sessions, identity and cookie."""
+    """Delete the caller's practice history. Guests are forgotten entirely;
+    accounts keep their login (use DELETE /api/me to remove the account)."""
     if user is not None:
         db.execute(delete(PracticeSession).where(PracticeSession.user_id == user.id))
-        db.delete(user)
+        if user.is_guest:
+            db.delete(user)
+            response.delete_cookie(GUEST_COOKIE, path="/api")
         db.commit()
-    response.delete_cookie(COOKIE_NAME, path="/api")
 
 
 @router.get("/stats", response_model=Stats)

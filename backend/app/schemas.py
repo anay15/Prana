@@ -80,3 +80,103 @@ class Stats(BaseModel):
     current_streak_days: int
     daily: list[DailyMinutes]
     per_pose: list[PoseBest]
+
+
+# ---------------------------------------------------------------- accounts
+
+Level = Literal["beginner", "intermediate", "advanced"]
+_COMMON_PASSWORDS = frozenset(
+    {
+        "password123",
+        "password1234",
+        "1234567890",
+        "qwertyuiop",
+        "iloveyou12",
+        "letmein123",
+        "welcome123",
+        "yogayogayoga",
+        "abcdefghij",
+        "1q2w3e4r5t",
+        "qwerty1234",
+        "passw0rd123",
+    }
+)
+
+
+class SignUpIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=10, max_length=128)
+    display_name: str | None = Field(default=None, max_length=60)
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, v: str) -> str:
+        from email_validator import EmailNotValidError, validate_email
+
+        try:
+            # Syntax only: no DNS lookups during sign-up
+            return validate_email(v.strip(), check_deliverability=False).normalized.lower()
+        except EmailNotValidError as exc:
+            raise ValueError("invalid email") from exc
+
+    @field_validator("display_name")
+    @classmethod
+    def clean_name(cls, v: str | None) -> str | None:
+        v = " ".join(v.split()) if v else None
+        return v or None
+
+    @model_validator(mode="after")
+    def strong_enough(self) -> "SignUpIn":
+        lowered = self.password.lower()
+        if lowered in _COMMON_PASSWORDS or lowered == self.email or len(set(self.password)) < 4:
+            raise ValueError("password too weak")
+        return self
+
+
+class LoginIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalise(cls, v: str) -> str:
+        return v.strip().lower()
+
+
+class GoogleIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    credential: str = Field(min_length=20, max_length=4096)
+
+
+class ProfileIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str | None = Field(default=None, max_length=60)
+    experience_level: Level | None = None
+    weekly_goal_days: int | None = Field(default=None, ge=1, le=7)
+
+    @field_validator("display_name")
+    @classmethod
+    def clean_name(cls, v: str | None) -> str | None:
+        return " ".join(v.split()) if v else v
+
+
+class MeOut(BaseModel):
+    authenticated: bool
+    is_guest: bool
+    email: str | None = None
+    display_name: str | None = None
+    experience_level: Level = "beginner"
+    weekly_goal_days: int = 3
+    has_password: bool = False
+    has_google: bool = False
+    created_at: datetime | None = None
+
+
+class PublicConfig(BaseModel):
+    google_client_id: str | None

@@ -1,5 +1,5 @@
+from app.auth import GUEST_COOKIE as COOKIE_NAME
 from app.poses import JOINTS, POSES
-from app.security import COOKIE_NAME
 
 from .conftest import ORIGIN
 
@@ -64,6 +64,7 @@ def test_csrf_requires_allowed_origin(client, session_body):
 
 
 def test_csrf_requires_json(client):
+    # A body that isn't JSON is rejected even from an allowed origin
     r = client.post(
         "/api/sessions",
         content="pose_id=tadasana",

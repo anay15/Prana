@@ -1,22 +1,16 @@
-"""Anonymous identity, CSRF protection, security headers and rate limiting."""
+"""CSRF protection, security headers, client IPs and rate limiting."""
 
 import hashlib
-import secrets
 from urllib.parse import urlsplit
 
-from fastapi import Depends, HTTPException, Request, Response, status
+from fastapi import HTTPException, Request, status
+from limits import parse
 from slowapi import Limiter
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
-from .db import get_db
-from .models import User
 
-COOKIE_NAME = "prana_id"
-COOKIE_MAX_AGE = 60 * 60 * 24 * 365
-_TOKEN_BYTES = 32
+_IDENTITY_COOKIES = ("prana_session", "prana_id")
 _UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
@@ -42,8 +36,10 @@ def client_ip(request: Request) -> str:
 
 
 def _identity_key(request: Request) -> str:
-    token = request.cookies.get(COOKIE_NAME)
-    return f"id:{hash_token(token)}" if token else f"ip:{client_ip(request)}"
+    for name in _IDENTITY_COOKIES:
+        if token := request.cookies.get(name):
+            return f"id:{hash_token(token)}"
+    return f"ip:{client_ip(request)}"
 
 
 limiter = Limiter(
@@ -55,36 +51,11 @@ limiter = Limiter(
 identity_limit = limiter.shared_limit("60/minute", scope="identity", key_func=_identity_key)
 
 
-def _lookup(db: Session, token: str | None) -> User | None:
-    if not token or len(token) > 128:
-        return None
-    return db.scalar(select(User).where(User.token_hash == hash_token(token)))
-
-
-def current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
-    """The caller's user record, or None if they have never saved anything."""
-    return _lookup(db, request.cookies.get(COOKIE_NAME))
-
-
-def current_or_new_user(request: Request, response: Response, db: Session = Depends(get_db)) -> User:
-    """Resolve the caller, creating an anonymous identity on first write."""
-    user = _lookup(db, request.cookies.get(COOKIE_NAME))
-    if user is not None:
-        return user
-    token = secrets.token_urlsafe(_TOKEN_BYTES)
-    user = User(token_hash=hash_token(token))
-    db.add(user)
-    db.commit()
-    response.set_cookie(
-        COOKIE_NAME,
-        token,
-        max_age=COOKIE_MAX_AGE,
-        httponly=True,
-        secure=settings.is_production,
-        samesite="lax",
-        path="/api",
-    )
-    return user
+def hit_limit(limit: str, scope: str, key: str) -> None:
+    """Rate-limit on a value only known inside the handler (e.g. the email
+    being signed in to). Raises 429 once the limit is exceeded."""
+    if not limiter.limiter.hit(parse(limit), scope, hash_token(key)):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Too many requests")
 
 
 def _origin_of(request: Request) -> str | None:
@@ -98,27 +69,31 @@ def _origin_of(request: Request) -> str | None:
 
 def require_same_origin(request: Request) -> None:
     """CSRF defence for state-changing requests: Origin must be allow-listed
-    and the body must be JSON (which forces a CORS preflight cross-site)."""
+    and any body must be JSON (which forces a CORS preflight cross-site)."""
     if request.method not in _UNSAFE_METHODS:
         return
     if _origin_of(request) not in settings.allowed_origins:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden")
-    if request.method != "DELETE" and not request.headers.get("content-type", "").startswith("application/json"):
+    has_body = request.headers.get("content-length", "0") != "0" or "transfer-encoding" in request.headers
+    if has_body and not request.headers.get("content-type", "").startswith("application/json"):
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Expected application/json")
 
 
 # MediaPipe compiles its WebAssembly runtime at load, hence 'wasm-unsafe-eval'.
-# Everything (scripts, model weights, wasm) is served from our own origin.
+# Scripts, model weights and wasm are served from our own origin; the only
+# third party is Google Identity Services for "Sign in with Google".
+_GSI = "https://accounts.google.com/gsi/"
 _CSP = "; ".join(
     [
         "default-src 'self'",
-        "script-src 'self' 'wasm-unsafe-eval'",
+        f"script-src 'self' 'wasm-unsafe-eval' {_GSI}client",
         "worker-src 'self' blob:",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        f"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com {_GSI}style",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob:",
         "media-src 'self' blob:",
-        "connect-src 'self'",
+        f"connect-src 'self' {_GSI}",
+        f"frame-src {_GSI}",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
@@ -136,7 +111,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         h["X-Frame-Options"] = "DENY"
         h["Referrer-Policy"] = "strict-origin-when-cross-origin"
         h["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=(), payment=()"
-        h["Cross-Origin-Opener-Policy"] = "same-origin"
+        # Google's sign-in popup needs to post back to this window
+        h["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         if settings.is_production:
             h["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
         path = request.url.path
