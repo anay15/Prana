@@ -79,6 +79,10 @@ body {
 @utility card {
   @apply rounded-3xl border border-line bg-surface;
 }
+@utility input {
+  @apply block w-full rounded-2xl border border-line bg-bg px-4 py-3 text-base text-ink placeholder:text-muted
+    focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 sm:text-sm;
+}
 @utility chip {
   @apply inline-flex items-center rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted;
 }

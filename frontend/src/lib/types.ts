@@ -56,4 +56,37 @@ export interface Stats {
   current_streak_days: number;
   daily: { date: string; minutes: number }[];
   per_pose: { pose_id: string; best_score: number; sessions: number }[];
+  weekly_goal: WeeklyGoal;
+}
+
+export type Level = "beginner" | "intermediate" | "advanced";
+
+export interface Me {
+  authenticated: boolean;
+  is_guest: boolean;
+  email: string | null;
+  display_name: string | null;
+  experience_level: Level;
+  weekly_goal_days: number;
+  has_password: boolean;
+  has_google: boolean;
+  created_at: string | null;
+}
+
+export interface WeeklyGoal {
+  goal_days: number;
+  days_done: number;
+  week_start: string;
+}
+
+export interface PoseHistory {
+  pose_id: string;
+  sessions: { created_at: string; avg_score: number; best_score: number; hold_s: number }[];
+  joints: { joint: JointName; score: number }[];
+}
+
+export interface Recommendation {
+  pose_id: string;
+  reason: string;
+  kind: "new" | "weak_joint" | "stale" | "improve";
 }

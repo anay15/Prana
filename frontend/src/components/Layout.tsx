@@ -1,5 +1,7 @@
-import { BarChart3, Home, LayoutGrid, Play } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { BarChart3, Home, LayoutGrid, LogOut, Play, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { displayName, initials, useAuth } from "../lib/auth";
 import { Logo } from "./Logo";
 
 const NAV = [
@@ -9,6 +11,14 @@ const NAV = [
 ];
 
 export function Layout() {
+  const { me } = useAuth();
+  const mobileNav = [
+    ...NAV,
+    me?.authenticated
+      ? { to: "/profile", label: "Profile", icon: User, end: false }
+      : { to: "/signin", label: "Sign in", icon: User, end: false },
+  ];
+
   return (
     <div className="flex min-h-dvh flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 btn btn-primary">
@@ -32,9 +42,12 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <Link to="/poses" className="btn btn-primary !px-4 !py-2">
-            <Play className="h-4 w-4" aria-hidden /> <span>Practice</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/poses" className="btn btn-primary !px-4 !py-2">
+              <Play className="h-4 w-4" aria-hidden /> <span>Practice</span>
+            </Link>
+            <AccountButton />
+          </div>
         </div>
       </header>
 
@@ -57,8 +70,8 @@ export function Layout() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         aria-label="Main"
       >
-        <div className="grid grid-cols-3">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+        <div className="grid grid-cols-4">
+          {mobileNav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to} to={to} end={end}
               className={({ isActive }) =>
@@ -71,6 +84,68 @@ export function Layout() {
           ))}
         </div>
       </nav>
+    </div>
+  );
+}
+
+function AccountButton() {
+  const { me, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const menu = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !menu.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  if (!me) return <span className="hidden h-9 w-9 md:block" aria-hidden />;
+  if (!me.authenticated) {
+    return (
+      <Link to={`/signin?next=${encodeURIComponent(location.pathname)}`} className="btn btn-ghost hidden !px-4 !py-2 md:inline-flex">
+        Sign in
+      </Link>
+    );
+  }
+  return (
+    <div className="relative hidden md:block" ref={menu}>
+      <button
+        onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Account menu"
+        className="grid h-9 w-9 place-items-center rounded-full bg-brand text-sm font-semibold text-bg transition hover:bg-brand-strong"
+      >
+        {initials(me)}
+      </button>
+      {open && (
+        <div role="menu" className="card absolute right-0 top-12 w-60 overflow-hidden p-1.5 shadow-xl">
+          <div className="px-3 py-2">
+            <div className="truncate text-sm font-semibold">{displayName(me)}</div>
+            <div className="truncate text-xs text-muted">{me.email}</div>
+          </div>
+          <div className="my-1 h-px bg-line" />
+          <Link role="menuitem" to="/profile" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-surface-2">
+            <User className="h-4 w-4" aria-hidden /> Profile & goals
+          </Link>
+          <Link role="menuitem" to="/progress" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-surface-2">
+            <BarChart3 className="h-4 w-4" aria-hidden /> My progress
+          </Link>
+          <button
+            role="menuitem" onClick={() => void signOut().then(() => navigate("/"))}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-surface-2"
+          >
+            <LogOut className="h-4 w-4" aria-hidden /> Sign out
+          </button>
+        </div>
+      )}
     </div>
   );
 }

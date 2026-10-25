@@ -1,10 +1,13 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { AuthProvider } from "./lib/auth";
 import { Home } from "./pages/Home";
 import { Library } from "./pages/Library";
 import { NotFound } from "./pages/NotFound";
+import { Profile } from "./pages/Profile";
 import { Progress } from "./pages/Progress";
+import { SignIn } from "./pages/SignIn";
 
 // The ML runtime is large; only load it when someone opens a practice session.
 const Practice = lazy(() => import("./pages/Practice").then((m) => ({ default: m.Practice })));
@@ -29,6 +32,8 @@ const router = createBrowserRouter([
           { path: "/poses", element: <Library /> },
           { path: "/practice/:poseId", element: <Suspense fallback={null}><Practice /></Suspense> },
           { path: "/progress", element: <Progress /> },
+          { path: "/signin", element: <SignIn /> },
+          { path: "/profile", element: <Profile /> },
           { path: "*", element: <NotFound /> },
         ],
       },
@@ -37,5 +42,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
