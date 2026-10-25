@@ -67,5 +67,7 @@ export function GoogleButton({ clientId, onCredential, text = "continue_with" }:
   }, [clientId, text]);
 
   if (failed) return <p className="text-center text-xs text-muted">Google sign-in is unavailable right now.</p>;
-  return <div ref={ref} className="flex min-h-[44px] w-full justify-center" />;
+  // Google's iframe is always light; matching its colour scheme stops the
+  // browser painting an opaque white box behind it in dark mode.
+  return <div ref={ref} className="flex min-h-[44px] w-full justify-center" style={{ colorScheme: "light" }} />;
 }
