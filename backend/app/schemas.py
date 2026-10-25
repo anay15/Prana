@@ -80,6 +80,7 @@ class Stats(BaseModel):
     current_streak_days: int
     daily: list[DailyMinutes]
     per_pose: list[PoseBest]
+    weekly_goal: "WeeklyGoal"
 
 
 # ---------------------------------------------------------------- accounts
@@ -180,3 +181,36 @@ class MeOut(BaseModel):
 
 class PublicConfig(BaseModel):
     google_client_id: str | None
+
+
+# ---------------------------------------------------------------- insights
+
+
+class WeeklyGoal(BaseModel):
+    goal_days: int
+    days_done: int
+    week_start: str
+
+
+class HistoryPoint(BaseModel):
+    created_at: datetime
+    avg_score: float
+    best_score: float
+    hold_s: float
+
+
+class JointAverage(BaseModel):
+    joint: str
+    score: float
+
+
+class PoseHistory(BaseModel):
+    pose_id: str
+    sessions: list[HistoryPoint]
+    joints: list[JointAverage]  # weakest first
+
+
+class Recommendation(BaseModel):
+    pose_id: str
+    reason: str
+    kind: Literal["new", "weak_joint", "stale", "improve"]

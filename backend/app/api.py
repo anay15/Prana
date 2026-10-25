@@ -9,7 +9,7 @@ from .auth import GUEST_COOKIE, current_or_new_user, current_user
 from .db import get_db
 from .models import PracticeSession, User
 from .poses import POSES
-from .schemas import DailyMinutes, PoseBest, SessionIn, SessionOut, Stats
+from .schemas import DailyMinutes, PoseBest, SessionIn, SessionOut, Stats, WeeklyGoal
 from .security import identity_limit, limiter, require_same_origin
 
 router = APIRouter(prefix="/api", dependencies=[Depends(require_same_origin)])
@@ -135,7 +135,12 @@ def stats(
         )
         for i in range(13, -1, -1)
     ]
+    week_start = today - timedelta(days=today.weekday())  # Monday, in the caller's timezone
+    days_done = sum(1 for d in minutes_by_day if week_start <= d <= today)
+    goal = user.weekly_goal_days if user is not None and not user.is_guest else 3
+
     return Stats(
+        weekly_goal=WeeklyGoal(goal_days=goal, days_done=days_done, week_start=week_start.isoformat()),
         total_sessions=len(sessions),
         total_minutes=round(sum(s.duration_s for s in sessions) / 60, 1),
         total_hold_minutes=round(sum(s.hold_s for s in sessions) / 60, 1),

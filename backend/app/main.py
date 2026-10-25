@@ -12,6 +12,7 @@ from . import models  # noqa: F401  (register tables)
 from .api import router
 from .auth_api import router as auth_router
 from .config import settings
+from .insights import router as insights_router
 from .migrate import upgrade as migrate_database
 from .security import SecurityHeadersMiddleware, limiter
 
@@ -39,6 +40,7 @@ app.state.limiter = limiter
 app.add_middleware(SecurityHeadersMiddleware)
 app.include_router(router)
 app.include_router(auth_router)
+app.include_router(insights_router)
 
 
 @app.exception_handler(RateLimitExceeded)
