@@ -156,6 +156,8 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
   }
 
   async function start() {
+    // Must run synchronously inside the tap, before any await (iOS speech rule)
+    voiceRef.current.unlock();
     setPhase("loading");
     setErrorMsg("");
     setSummary(null);
@@ -521,7 +523,10 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
                     />
                     High accuracy mode (heavier model, best on laptops)
                   </label>
-                  <p className="mt-3 text-[11px] text-muted">Video is processed on this device and never uploaded.</p>
+                  <p className="mt-3 text-[11px] text-muted">
+                    Video is processed on this device and never uploaded.
+                    {voiceRef.current.supported ? " On iPhone, turn off silent mode to hear the voice coach." : " Your browser doesn't support the voice coach."}
+                  </p>
                 </div>
               </div>
             )}
@@ -569,6 +574,17 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
               <button onClick={startCalibration} disabled={calibrating} className="btn btn-ghost !px-3 !py-1.5">
                 <Ruler className="h-4 w-4" aria-hidden /> Measure my space
               </button>
+              <button
+                onClick={() => {
+                  setVoiceOn(true);
+                  voiceRef.current.enabled = true;
+                  voiceRef.current.unlock();
+                  voiceRef.current.say("Hello! Your voice coach is working.", { force: true });
+                }}
+                className="btn btn-ghost !px-3 !py-1.5"
+              >
+                <Volume2 className="h-4 w-4" aria-hidden /> Test voice
+              </button>
               {hasWideLens && verdict?.kind === "wide-lens" && (
                 <button onClick={() => void switchCamera(cameras.find((c) => c.wide)!.id)} className="btn btn-primary !px-3 !py-1.5">
                   Use wide camera
@@ -597,7 +613,15 @@ function PracticeSession({ pose, poses }: { pose: Pose; poses: Pose[] }) {
                   <Metric label="Time" value={formatTime(live.elapsedS)} />
                   <div className="flex gap-2 pt-1">
                     <button
-                      onClick={() => setVoiceOn((v) => !v)} className="btn btn-ghost !px-3 !py-2"
+                      onClick={() => {
+                        if (!voiceOn) {
+                          voiceRef.current.enabled = true;
+                          voiceRef.current.unlock();
+                          voiceRef.current.say("Voice coach on", { force: true });
+                        }
+                        setVoiceOn((v) => !v);
+                      }}
+                      className="btn btn-ghost !px-3 !py-2"
                       aria-pressed={voiceOn} aria-label={voiceOn ? "Mute voice coach" : "Unmute voice coach"}
                     >
                       {voiceOn ? <Volume2 className="h-4 w-4" aria-hidden /> : <VolumeX className="h-4 w-4" aria-hidden />}
