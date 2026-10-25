@@ -24,6 +24,8 @@ export interface Pose {
   view: "front" | "side";
   mirror: boolean;
   hold_seconds: number;
+  /** Room the pose needs on camera, in body heights. */
+  space: { w: number; h: number };
   focus: string[];
   description: string;
   cues: string[];

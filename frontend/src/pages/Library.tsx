@@ -2,7 +2,10 @@ import { ArrowRight, Camera } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PoseFigure } from "../components/PoseFigure";
+import { FitChip } from "../components/SpaceCard";
 import { usePoses } from "../hooks/usePoses";
+import { lastCameraId } from "../lib/camera";
+import { assessFit, loadRoom } from "../lib/framing";
 
 const FILTERS = ["all", "beginner", "intermediate"] as const;
 
@@ -10,6 +13,11 @@ export function Library() {
   const { poses, error, loading } = usePoses();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const shown = poses?.filter((p) => filter === "all" || p.level === filter) ?? [];
+  // Room measured on the camera used last time, if any
+  const [room] = useState(() => {
+    const id = lastCameraId();
+    return id ? loadRoom(id) : null;
+  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:py-14">
@@ -51,6 +59,7 @@ export function Library() {
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {p.focus.map((f) => <span key={f} className="chip">{f}</span>)}
               </div>
+              {room && <div className="mt-3"><FitChip verdict={assessFit(p, room)} compact /></div>}
               <div className="mt-auto flex items-center justify-between pt-5">
                 <span className="text-xs text-muted">Hold {p.hold_seconds}s</span>
                 <Link to={`/practice/${p.id}`} className="btn btn-primary !py-2.5">

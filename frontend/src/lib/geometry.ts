@@ -76,19 +76,34 @@ export interface Evaluation {
   score: number;
   /** Share of the pose's weighted joints that were visible (0-1). */
   coverage: number;
+  /** Whether every key joint (weight >= KEY_WEIGHT) was visible. */
+  keyVisible: boolean;
   joints: JointResult[];
   mirrored: boolean;
 }
+
+/** Joints weighted this heavily define the pose; the rest are refinements. */
+export const KEY_WEIGHT = 1.5;
+/** Minimum share of all joints needed when the key ones are visible. */
+export const MIN_COVERAGE = 0.45;
+
+/** Enough of the body is in frame to score the pose fairly. Lets people in
+ * small rooms practise even when, say, their hands leave the frame. */
+export const canScore = (e: Evaluation) => e.keyVisible && e.coverage >= MIN_COVERAGE;
 
 function evaluateTargets(angles: Partial<Record<JointName, number>>, targets: JointTarget[], mirrored: boolean): Evaluation {
   let total = 0;
   let weighted = 0;
   let visibleWeight = 0;
+  let keyVisible = true;
   const joints: JointResult[] = [];
   for (const t of targets) {
     total += t.weight;
     const angle = angles[t.joint];
-    if (angle === undefined) continue;
+    if (angle === undefined) {
+      if (t.weight >= KEY_WEIGHT) keyVisible = false;
+      continue;
+    }
     const score = jointScore(angle, t);
     visibleWeight += t.weight;
     weighted += score * t.weight;
@@ -104,6 +119,7 @@ function evaluateTargets(angles: Partial<Record<JointName, number>>, targets: Jo
   return {
     score: visibleWeight ? weighted / visibleWeight : 0,
     coverage: total ? visibleWeight / total : 0,
+    keyVisible: keyVisible && visibleWeight > 0,
     joints,
     mirrored,
   };

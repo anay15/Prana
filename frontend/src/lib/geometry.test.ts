@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { angleAt, coachingCue, evaluatePose, jointScore, measureAngles, mirrorTargets } from "./geometry";
+import { angleAt, canScore, coachingCue, evaluatePose, jointScore, measureAngles, mirrorTargets } from "./geometry";
 import type { JointTarget, Point3 } from "./types";
 
 const p = (x: number, y: number, z = 0): Point3 => ({ x, y, z, visibility: 1 });
@@ -40,6 +40,18 @@ describe("evaluatePose", () => {
   it("reports coverage when joints are hidden", () => {
     const e = evaluatePose({ left_knee: 90 }, { ...pose, mirror: false });
     expect(e.coverage).toBe(0.5);
+  });
+  it("scores when key joints are visible even if others are not", () => {
+    const targets = [
+      { joint: "left_knee", angle: 180, tolerance: 10, weight: 2 },
+      { joint: "right_knee", angle: 180, tolerance: 10, weight: 1.5 },
+      { joint: "left_elbow", angle: 180, tolerance: 10, weight: 0.5 },
+      { joint: "right_elbow", angle: 180, tolerance: 10, weight: 0.5 },
+    ] as JointTarget[];
+    const handsOutOfFrame = evaluatePose({ left_knee: 178, right_knee: 175 }, { mirror: false, targets });
+    expect(canScore(handsOutOfFrame)).toBe(true);
+    const kneeMissing = evaluatePose({ left_knee: 178, left_elbow: 180, right_elbow: 180 }, { mirror: false, targets });
+    expect(canScore(kneeMissing)).toBe(false);
   });
   it("mirrors target joint names", () => {
     expect(mirrorTargets(pose.targets).map((t) => t.joint)).toEqual(["right_knee", "left_knee"]);
