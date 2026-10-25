@@ -14,8 +14,10 @@ services:
       # Render chain: <client>, <Cloudflare edge>, <Render LB> -> client is 3rd from the right
       - key: TRUSTED_PROXY_HOPS
         value: "3"
-      - key: GOOGLE_CLIENT_ID # public OAuth client ID; set it in the dashboard to enable Google sign-in
-        sync: false
+      # Public OAuth client ID (not a secret: every visitor's browser receives it).
+      # Never put the client secret here; Prana doesn't use it.
+      - key: GOOGLE_CLIENT_ID
+        value: 199341968734-c46q82v9ke7v9gm4no2706rddpegb92j.apps.googleusercontent.com
       - key: DATABASE_URL
         fromDatabase:
           name: prana-db
